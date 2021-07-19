@@ -15,6 +15,10 @@
 #define MINUTES_BLOCKS 6
 #define HOURS_BLOCKS 12
 #define CENTRE DIGIT/2
+#define LED_PIN 13
+#define CONTROL_SYMBOL 's'
+#define DELAYVAL 500 // Time (in milliseconds)
+
 
 // this need to be changed
 #define DAY 19
@@ -31,11 +35,9 @@ Adafruit_NeoPixel seconds(NUMPIXELSSMALL, SECONDS_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel minutes(NUMPIXELSSMALL, MINUTES_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel hours(NUMPIXELSBIG, HOURS_PIN, NEO_GRB + NEO_KHZ800);
 
-#define DELAYVAL 500 // Time (in milliseconds) to pause between pixels
-
 int seconds_clr[3] = {0, 255, 0};
 int mins_clr[3] = {255, 0, 0};
-int hours_clr[3] = {255, 20, 255};
+int hours_clr[3] = {0, 0, 255};
 
 void _light_one(int idx, Adafruit_NeoPixel *time_type, const int clr[3]);
 void _light_zero(int idx, Adafruit_NeoPixel *time_type, const int clr[3]);
@@ -65,16 +67,17 @@ void loop() {
     Serial.print(curHours); Serial.print("; ");
     Serial.print(curMins); Serial.print("; ");
     Serial.print(curSecs); Serial.println("; ");
-    setTime(curHours, curMins, curSecs, DAY, MONTH, YEAR) // TODO
+    setTime(curHours, curMins, curSecs, DAY, MONTH, YEAR); // TODO
   }
   writeTime(second(), minute(), hour());
+  delay(497);
 }
 
 void _light_one(int idx, Adafruit_NeoPixel *time_type, const int clr[3]){
   for (int i = idx * DIGIT; i < (idx + 1) * DIGIT; i++) {
     time_type->setPixelColor(i, seconds.Color(clr[0], clr[1], clr[2]));
   }
-} 
+}
 
 void _light_zero(int idx, Adafruit_NeoPixel *time_type, const int clr[3]){
    time_type->setPixelColor(idx * DIGIT+CENTRE, seconds.Color(clr[0], clr[1], clr[2]));
