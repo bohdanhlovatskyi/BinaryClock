@@ -33,7 +33,7 @@ void setup() {
 }
 
 // parse and validate time
-boolean parseTime(String timeStr, int &outHours, int &outMins, int &outSecs) {
+bool parseTime(String timeStr, int &outHours, int &outMins, int &outSecs) {
   if ((timeStr.charAt(2) != ':') || (timeStr.charAt(5) != ':')) {
     return false;
   }
@@ -53,11 +53,11 @@ boolean parseTime(String timeStr, int &outHours, int &outMins, int &outSecs) {
 }
 
 bool readTime(int &outHours, int &outMins, int &outSecs) {
-  String time;
   char controlSymbol = Serial.read();
   if (controlSymbol =! CONTROL_SYMBOL) {
     return false;
   }
+  String timeStr;
   // read 8 characters "HH:MM:SS"
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 10; j++) {
@@ -67,10 +67,10 @@ bool readTime(int &outHours, int &outMins, int &outSecs) {
       delay(10);
     }
     char nextChar = Serial.read();
-    time += nextChar;
+    timeStr += nextChar;
   }
 
-  return parseTime(time, outHours, outMins, outSecs);
+  return parseTime(timeStr, outHours, outMins, outSecs);
 }
 
 void loop() {
