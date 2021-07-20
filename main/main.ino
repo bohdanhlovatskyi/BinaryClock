@@ -1,5 +1,8 @@
 #include <Adafruit_NeoPixel.h>
 #include <TimeLib.h>
+#include <RTClib.h>
+#include <Wire.h>
+
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
@@ -20,25 +23,24 @@
 #define DELAYVAL 500 // Time (in milliseconds)
 
 
-// this need to be changed
-#define DAY 19
-#define MONTH 7
-#define YEAR 2021
+RTC_DS3231 rtc;
+char t[32];
 
-
+// for the uart setup time function (serial port)
 int curHours;
 int curMins;
 int curSecs;
-
 
 Adafruit_NeoPixel seconds(NUMPIXELSSMALL, SECONDS_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel minutes(NUMPIXELSSMALL, MINUTES_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel hours(NUMPIXELSBIG, HOURS_PIN, NEO_GRB + NEO_KHZ800);
 
+// colors for the strips
 int seconds_clr[3] = {0, 255, 0};
 int mins_clr[3] = {255, 0, 0};
 int hours_clr[3] = {0, 0, 255};
 
+// --------------------- Functions declaration -----------------------------------------
 void _light_one(int idx, Adafruit_NeoPixel *time_type, const int clr[3]);
 void _light_zero(int idx, Adafruit_NeoPixel *time_type, const int clr[3]);
 void writeBlock(int num, Adafruit_NeoPixel *time_type, int size_block, const int clr[3]);
@@ -48,30 +50,40 @@ bool parseTime(String timeStr, int &outHours, int &outMins, int &outSecs);
 
 
 void setup() {
-#if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
-  clock_prescale_set(clock_div_1);
-#endif
+  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+    clock_prescale_set(clock_div_1);
+  #endif
 
-  Serial.begin(9600);
   seconds.begin();
   minutes.begin();
   hours.begin();
-  setTime(16,34,0,19,7,2021);
-//    setTime(hr,min,sec,day,mnth,yr);
+
+  Serial.begin(9600);
+  Wire.begin();
+  // rtc is connected to the default sda and sclk pins !
+  if (!rtc.begin()) {
+    Serial.println("Could not start the clock");
+    while(1);
+  }
+  // adjusts the rtc with the time of file compilation
+  rtc.adjust(DateTime(F(__DATE__),F(__TIME__)));
+
 }
 
+
 void loop() {
+  DateTime now = rtc.now();
   if (Serial.available()) {
     readTime(curHours, curMins, curSecs);
-    // DEBUG
-    Serial.print(curHours); Serial.print("; ");
-    Serial.print(curMins); Serial.print("; ");
-    Serial.print(curSecs); Serial.println("; ");
-    setTime(curHours, curMins, curSecs, DAY, MONTH, YEAR); // TODO
+    rtc.adjust(DateTime(now.year(), now.month(), now.day(), curHours, curMins, curSecs));
   }
-  writeTime(second(), minute(), hour());
-  delay(497);
+
+  sprintf(t, "%02d:%02d:%02d %02d/%02d/%02d",  now.hour(), now.minute(), now.second(), now.day(), now.month(), now.year());  
+  Serial.println(t);
+
+  writeTime(now.second(), now.minute(), now.hour());
 }
+
 
 void _light_one(int idx, Adafruit_NeoPixel *time_type, const int clr[3]){
   for (int i = idx * DIGIT; i < (idx + 1) * DIGIT; i++) {
@@ -102,15 +114,16 @@ void writeBlock(int num, Adafruit_NeoPixel *time_type, int size_block, const int
 }
 
 void writeTime(int second_time, int minute_time, int hour_time){
-  seconds.clear();
-  minutes.clear();
-  hours.clear();
   writeBlock(second_time, &seconds, SECONDS_BLOCKS, seconds_clr);
   writeBlock(minute_time, &minutes, MINUTES_BLOCKS, mins_clr);
   writeBlock(hour_time, &hours, HOURS_BLOCKS, hours_clr);
   seconds.show();
   minutes.show();
   hours.show();
+  delay(497);
+  seconds.clear();
+  minutes.clear();
+  hours.clear();
 }
 
 // parse and validate time
