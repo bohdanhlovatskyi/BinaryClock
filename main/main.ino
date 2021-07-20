@@ -102,16 +102,15 @@ void writeBlock(int num, Adafruit_NeoPixel *time_type, int size_block, const int
 }
 
 void writeTime(int second_time, int minute_time, int hour_time){
+  seconds.clear();
+  minutes.clear();
+  hours.clear();
   writeBlock(second_time, &seconds, SECONDS_BLOCKS, seconds_clr);
   writeBlock(minute_time, &minutes, MINUTES_BLOCKS, mins_clr);
   writeBlock(hour_time, &hours, HOURS_BLOCKS, hours_clr);
   seconds.show();
   minutes.show();
   hours.show();
-  delay(1000);
-  seconds.clear();
-  minutes.clear();
-  hours.clear();
 }
 
 // parse and validate time
